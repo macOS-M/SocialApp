@@ -1,0 +1,10 @@
+<div class="min-h-screen bg-indigo-50 flex flex-col items-center justify-center p-6">
+  <h1 class="text-5xl font-bold mb-4 text-center">Welcome to Social App!</h1>
+  <p class="text-lg mb-6 text-center text-gray-700">Connect with friends, share moments, and enjoy your social life.</p>
+ <div class="flex space-x-4">
+  <%= link_to "Sign Up", new_user_registration_path, class: "px-6 py-3 bg-indigo-500 text-white rounded-lg hover:bg-indigo-600" %>
+  <%= link_to "Log In", new_user_session_path, class: "px-6 py-3 border border-indigo-500 text-indigo-500 rounded-lg hover:bg-indigo-100" %>
+</div>
+
+  <img src="/signup-illustration.png" alt="App illustration" class="mt-10 w-3/4 md:w-1/2">
+</div>

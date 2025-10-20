@@ -14,10 +14,42 @@
     <div class="md:col-span-3 space-y-6">
       <h2 class="text-2xl font-bold mb-4">Your Feed</h2>
 
+      <div class="bg-white p-4 rounded-2xl shadow space-y-3">
+        <%= form_with(model: @post, authenticity_token: true, data: { turbo: false }, local: true, id: "dashboard-post-form", class: "space-y-4") do |f| %>
+          <div>
+            <%= f.label :content, "What's on your mind?", class: "block text-sm font-medium text-gray-700" %>
+            <%= f.text_area :content, rows: 4, required: true, class: "mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500" %>
+            <% if @post.errors[:content].present? %>
+              <p class="text-sm text-red-600 mt-1"><%= @post.errors[:content].first %></p>
+            <% end %>
+          </div>
+        <% end %>
+        <div class="flex justify-end">
+          <button type="submit" form="dashboard-post-form" class="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700">
+            Post
+          </button>
+        </div>
+      </div>
+
       <% @posts.each do |post| %>
-        <div class="bg-white p-4 rounded-2xl shadow hover:shadow-md transition">
+        <div class="bg-white p-4 rounded-2xl shadow hover:shadow-md transition relative">
           <p class="text-gray-800"><%= post.content %></p>
           <p class="text-gray-500 text-sm mt-2"><%= time_ago_in_words(post.created_at) %> ago</p>
+
+          <% if post.user == current_user %>
+            <div class="absolute top-4 right-4 inline-block text-left" data-controller="dropdown">
+              <button type="button" class="inline-flex justify-center w-8 h-8 rounded-full hover:bg-gray-200" data-action="click->dropdown#toggle">
+                <svg class="w-5 h-5 text-gray-600" fill="currentColor" viewBox="0 0 20 20">
+                  <path d="M10 6a2 2 0 110-4 2 2 0 010 4zm0 6a2 2 0 110-4 2 2 0 010 4zm0 6a2 2 0 110-4 2 2 0 010 4z" />
+                </svg>
+              </button>
+
+              <div data-dropdown-target="menu" class="hidden absolute right-0 mt-2 w-32 bg-white border rounded shadow-lg z-50">
+                <%= link_to "Edit", edit_post_path(post), class: "block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100" %>
+                <%= link_to "Delete", post_path(post), data: { turbo_method: :delete, turbo_confirm: "Are you sure?" }, class: "block px-4 py-2 text-sm text-red-600 hover:bg-gray-100" %>
+              </div>
+            </div>
+          <% end %>
         </div>
       <% end %>
 

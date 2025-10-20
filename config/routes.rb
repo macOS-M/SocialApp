@@ -9,6 +9,13 @@ Rails.application.routes.draw do
   get "/dashboard", to: "dashboard#index", as: :dashboard
 
   resources :posts, only: [ :new, :create, :edit, :update, :destroy ]
+  resources :friendships, only: [ :create, :destroy ] do
+    member do
+      patch :accept
+      patch :reject
+    end
+  end
+
 
 
 

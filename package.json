@@ -1,0 +1,7 @@
+{
+  "devDependencies": {
+    "eslint": "^9.37.0",
+    "eslint-define-config": "^2.1.0",
+    "eslint-plugin-react": "^7.37.5"
+  }
+}

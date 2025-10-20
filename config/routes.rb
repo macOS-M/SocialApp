@@ -8,6 +8,8 @@ Rails.application.routes.draw do
   root to: "pages#home"
   get "/dashboard", to: "dashboard#index", as: :dashboard
 
+  resources :posts, only: [ :new, :create, :edit, :update, :destroy ]
+
 
 
   # Render dynamic PWA files from app/views/pwa/* (remember to link manifest in application.html.erb)

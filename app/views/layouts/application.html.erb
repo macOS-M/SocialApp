@@ -41,8 +41,8 @@
   <% end %>
 </div>
 
-
-  <main class="<%= current_page?(new_user_session_path) || current_page?(new_user_registration_path) ? 'flex-grow w-full flex items-center justify-center min-h-screen' : 'flex-grow container mx-auto px-4 pt-24 pb-10' %>">
+  <% centered_auth = (defined?(devise_controller?) && devise_controller? && action_name == 'new') %>
+  <main class="<%= centered_auth ? 'flex-grow container mx-auto flex items-center justify-center min-h-[calc(100vh-6rem)]' : 'flex-grow container mx-auto' %> <%= 'pt-16' if content_for?(:nav_offset) %>">
     <%= yield %>
   </main>
 

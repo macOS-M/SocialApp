@@ -7,6 +7,7 @@ Rails.application.routes.draw do
   get "up" => "rails/health#show", as: :rails_health_check
   root to: "pages#home"
   get "/dashboard", to: "dashboard#index", as: :dashboard
+  get "/profile/:username", to: "profiles#show", as: :profile
 
   resources :posts, only: [ :new, :create, :edit, :update, :destroy ]
   resources :friendships, only: [ :create, :destroy ] do

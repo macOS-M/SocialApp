@@ -35,12 +35,22 @@
       <% @posts.each do |post| %>
         <div class="bg-white p-4 rounded-2xl shadow hover:shadow-md transition relative">
           <div class="flex items-center mb-3">
-            <%= link_to profile_path(post.user.username), class: "font-semibold text-gray-900 hover:text-indigo-600 transition" do %>
-              <%= post.user.username %>
-            <% end %>
-            <span class="text-gray-400 text-sm ml-2">• <%= time_ago_in_words(post.created_at) %> ago</span>
+            <div class="w-10 h-10 rounded-full bg-gradient-to-br from-indigo-400 to-purple-500 flex items-center justify-center overflow-hidden">
+              <% user = post.user %>
+              <% if user.respond_to?(:profile_image) && user.profile_image.attached? %>
+                <%= image_tag url_for(user.profile_image), class: "w-full h-full object-cover" %>
+              <% elsif user[:profile_picture].present? %>
+                <%= image_tag user[:profile_picture], class: "w-full h-full object-cover" %>
+              <% else %>
+                <span class="text-white font-bold"><%= user.username[0].upcase %></span>
+              <% end %>
+            </div>
+            <div class="ml-3">
+              <%= link_to user.username, profile_path(user.username), class: "font-semibold text-gray-900 hover:text-indigo-600 transition" %>
+              <span class="text-gray-400 text-sm ml-2">• <%= time_ago_in_words(post.created_at) %> ago</span>
+            </div>
           </div>
-          <p class="text-gray-800"><%= post.content %></p>
+          <p class="text-gray-800 whitespace-pre-wrap"><%= post.content %></p>
 
           <% if post.user == current_user %>
             <div class="absolute top-4 right-4 inline-block text-left" data-controller="dropdown">

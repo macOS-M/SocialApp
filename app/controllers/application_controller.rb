@@ -5,7 +5,17 @@ class ApplicationController < ActionController::Base
   def configure_permitted_parameters
     devise_parameter_sanitizer.permit(:sign_up, keys: [ :username, :date_of_birth ])
 
-    devise_parameter_sanitizer.permit(:account_update, keys: [ :username, :date_of_birth ])
+    devise_parameter_sanitizer.permit(
+      :account_update,
+      keys: [
+        :username,
+        :date_of_birth,
+        :bio,
+        :location,
+        :profile_image,
+        :cover_image
+      ]
+    )
   end
   def after_sign_in_path_for(resource)
     dashboard_path

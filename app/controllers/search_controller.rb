@@ -7,14 +7,8 @@ class SearchController < ApplicationController
 
     @results = {}
 
-    if @type == "users"
-      scope = User.search(@q)
-      scope = scope.where.not(id: current_user.id) if current_user.present?
-      @results[:users] = scope.order(username: :asc).limit(50)
-    else
-      scope = User.search(@q)
-      scope = scope.where.not(id: current_user.id) if current_user.present?
-      @results[:users] = scope.order(username: :asc).limit(50)
-    end
+    scope = User.search(@q)
+    scope = scope.where.not(id: current_user.id) if current_user.present?
+    @results[:users] = scope.order(username: :asc).limit(50)
   end
 end

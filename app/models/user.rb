@@ -29,7 +29,7 @@ class User < ApplicationRecord
   scope :search, ->(term) {
     next all if term.blank?
 
-    sanitized = term.to_s.strip.downcase
+    sanitized = ActiveRecord::Base.sanitize_sql_like(term.to_s.strip.downcase)
     where(
       "LOWER(username) LIKE :q OR LOWER(COALESCE(location, '')) LIKE :q OR LOWER(COALESCE(bio, '')) LIKE :q",
       q: "%#{sanitized}%"

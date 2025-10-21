@@ -1,0 +1,28 @@
+<% content_for :title, "Search" %>
+<% content_for :nav_offset, true %>
+
+<div class="pt-20">
+  <div class="max-w-3xl mx-auto px-4">
+    <div class="mb-6 flex items-center justify-between">
+      <h1 class="text-2xl font-bold text-gray-900">Search</h1>
+      <% if @q.present? %>
+        <span class="text-sm text-gray-500">Results for "<%= @q %>"</span>
+      <% end %>
+    </div>
+
+    <div class="space-y-6">
+      <div>
+        <h2 class="text-lg font-semibold text-gray-800 mb-2">Users <span class="text-gray-500">(<%= @results[:users]&.size || 0 %>)</span></h2>
+        <% if @results[:users].present? %>
+          <ul class="divide-y divide-gray-200 bg-white shadow rounded-lg">
+            <% @results[:users].each do |user| %>
+              <%= render partial: "user_result", locals: { user: user } %>
+            <% end %>
+          </ul>
+        <% else %>
+          <div class="bg-white shadow rounded-lg p-6 text-gray-600">Nothing found.</div>
+        <% end %>
+      </div>
+    </div>
+  </div>
+</div>

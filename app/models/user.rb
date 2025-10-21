@@ -25,4 +25,14 @@ class User < ApplicationRecord
   has_many :pending_friends, through: :pending_friendships, source: :friend
   has_many :incoming_pending_friendships, -> { where(status: "pending") }, class_name: "Friendship", foreign_key: "friend_id"
   has_many :incoming_pending_friends, through: :incoming_pending_friendships, source: :user
+
+  scope :search, ->(term) {
+    next all if term.blank?
+
+    sanitized = term.to_s.strip.downcase
+    where(
+      "LOWER(username) LIKE :q OR LOWER(COALESCE(location, '')) LIKE :q OR LOWER(COALESCE(bio, '')) LIKE :q",
+      q: "%#{sanitized}%"
+    )
+  }
 end

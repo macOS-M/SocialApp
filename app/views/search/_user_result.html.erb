@@ -1,0 +1,22 @@
+<li class="flex items-center p-4">
+  <div class="w-10 h-10 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-700 font-semibold mr-3 overflow-hidden">
+    <% if user.respond_to?(:profile_image) && user.profile_image.attached? %>
+      <%= image_tag url_for(user.profile_image), class: "w-10 h-10 object-cover" %>
+    <% elsif user[:profile_picture].present? %>
+      <%= image_tag user[:profile_picture], class: "w-10 h-10 object-cover" %>
+    <% else %>
+      <span><%= user.username.to_s.first&.upcase || "U" %></span>
+    <% end %>
+  </div>
+  <div class="flex-1">
+    <div class="font-medium text-gray-900"><%= link_to user.username, profile_path(user.username), class: "hover:underline" %></div>
+    <div class="text-sm text-gray-600">
+      <% if user.location.present? %>
+        <%= user.location %>
+      <% end %>
+    </div>
+  </div>
+  <div>
+    <%= link_to "View", profile_path(user.username), class: "text-indigo-600 hover:text-indigo-800 text-sm font-medium" %>
+  </div>
+</li>

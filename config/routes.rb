@@ -8,6 +8,7 @@ Rails.application.routes.draw do
   root to: "pages#home"
   get "/dashboard", to: "dashboard#index", as: :dashboard
   get "/profile/:username", to: "profiles#show", as: :profile
+  get "/search", to: "search#index", as: :search
 
   resources :posts, only: [ :new, :create, :edit, :update, :destroy ]
   resources :friendships, only: [ :create, :destroy ] do

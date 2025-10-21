@@ -3,9 +3,6 @@ html, body {
   height: 100%;
   min-height: 100%;
 }
-body{
-    padding-top: 4rem; 
-}
 
 /* Chrome, Edge, Safari */
 ::-webkit-scrollbar {
@@ -31,5 +28,5 @@ body{
 /* For Firefox */
 * {
   scrollbar-width: thin;           
-  scrollbar-color: #6a11cb #f0f0f0;
+  scrollbar-color: black #f0f0f0;
 }

@@ -1,3 +1,4 @@
+<% content_for :nav_offset, true %>
 <div class="min-h-screen bg-indigo-50 p-6 sm:p-10">
   <div class="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-4 gap-6">
 
@@ -34,7 +35,9 @@
       <% @posts.each do |post| %>
         <div class="bg-white p-4 rounded-2xl shadow hover:shadow-md transition relative">
           <div class="flex items-center mb-3">
-            <div class="font-semibold text-gray-900"><%= post.user.username %></div>
+            <%= link_to profile_path(post.user.username), class: "font-semibold text-gray-900 hover:text-indigo-600 transition" do %>
+              <%= post.user.username %>
+            <% end %>
             <span class="text-gray-400 text-sm ml-2">• <%= time_ago_in_words(post.created_at) %> ago</span>
           </div>
           <p class="text-gray-800"><%= post.content %></p>
@@ -91,7 +94,7 @@
           <ul>
             <% @user.friends.each do |friend| %>
               <li class="flex justify-between items-center mb-2">
-                <span><%= friend.username %></span>
+                <%= link_to friend.username, profile_path(friend.username), class: "hover:text-indigo-600 transition" %>
                 <%= link_to "Remove", friendship_path(friend), data: { turbo_method: :delete, turbo_confirm: "Remove friend?" }, class: "text-red-500 hover:underline" %>
               </li>
             <% end %>
@@ -109,7 +112,7 @@
           <% next if @user.pending_friends.include?(u) %>
           <% next if @user.incoming_pending_friends.include?(u) %>
           <div class="flex justify-between items-center mb-2">
-            <span><%= u.username %></span>
+            <%= link_to u.username, profile_path(u.username), class: "hover:text-indigo-600 transition" %>
             <%= link_to "Add Friend", friendships_path(friend_id: u.id), data: { turbo_method: :post }, class: "text-blue-500 hover:underline" %>
           </div>
         <% end %>

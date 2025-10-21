@@ -1,21 +1,24 @@
 <% content_for :nav_offset, true %>
 <div class="min-h-screen bg-indigo-50">
   <div class="relative h-64 bg-gradient-to-r from-indigo-500 to-purple-600">
-    <% if @user.cover_photo.present? %>
-      <%= image_tag @user.cover_photo, class: "w-full h-full object-cover" %>
+    <% if @user.respond_to?(:cover_image) && @user.cover_image.respond_to?(:attached?) && @user.cover_image.attached? %>
+      <%= image_tag url_for(@user.cover_image), class: "w-full h-full object-cover" %>
+    <% elsif @user[:cover_photo].present? %>
+      <%= image_tag @user[:cover_photo], class: "w-full h-full object-cover" %>
     <% end %>
   </div>
 
-
-  <div class="max-w-5xl mx-auto px-6 -mt-20">
+  <div class="max-w-5xl mx-auto px-6 -mt-20 relative z-10">
     <div class="bg-white rounded-2xl shadow-lg p-6">
       <div class="flex flex-col md:flex-row items-center md:items-end space-y-4 md:space-y-0 md:space-x-6">
         
 
         <div class="relative">
           <div class="w-32 h-32 rounded-full border-4 border-white shadow-lg bg-gradient-to-br from-indigo-400 to-purple-500 flex items-center justify-center overflow-hidden">
-            <% if @user.profile_picture.present? %>
-              <%= image_tag @user.profile_picture, class: "w-full h-full object-cover" %>
+            <% if @user.respond_to?(:profile_image) && @user.profile_image.respond_to?(:attached?) && @user.profile_image.attached? %>
+              <%= image_tag url_for(@user.profile_image), class: "w-full h-full object-cover" %>
+            <% elsif @user[:profile_picture].present? %>
+              <%= image_tag @user[:profile_picture], class: "w-full h-full object-cover" %>
             <% else %>
               <span class="text-white text-4xl font-bold"><%= @user.username[0].upcase %></span>
             <% end %>
@@ -169,15 +172,21 @@
               <% @posts.each do |post| %>
                 <div class="bg-gray-50 p-4 rounded-xl hover:shadow-md transition relative">
                   <div class="flex items-center mb-3">
-                    <div class="w-10 h-10 rounded-full bg-gradient-to-br from-indigo-400 to-purple-500 flex items-center justify-center">
-                      <span class="text-white font-bold"><%= @user.username[0].upcase %></span>
+                    <div class="w-10 h-10 rounded-full bg-gradient-to-br from-indigo-400 to-purple-500 flex items-center justify-center overflow-hidden">
+                      <% user = post.user %>
+                      <% if user.respond_to?(:profile_image) && user.profile_image.attached? %>
+                        <%= image_tag url_for(user.profile_image), class: "w-full h-full object-cover" %>
+                      <% elsif user[:profile_picture].present? %>
+                        <%= image_tag user[:profile_picture], class: "w-full h-full object-cover" %>
+                      <% else %>
+                        <span class="text-white font-bold"><%= user.username[0].upcase %></span>
+                      <% end %>
                     </div>
                     <div class="ml-3">
-                      <div class="font-semibold text-gray-900"><%= @user.username %></div>
+                      <div class="font-semibold text-gray-900"><%= user.username %></div>
                       <span class="text-gray-500 text-sm"><%= time_ago_in_words(post.created_at) %> ago</span>
                     </div>
                   </div>
-                  
                   <p class="text-gray-800 whitespace-pre-wrap"><%= post.content %></p>
 
                   <% if @is_own_profile %>

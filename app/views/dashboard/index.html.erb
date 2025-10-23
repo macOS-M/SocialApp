@@ -131,7 +131,7 @@
         <h2 class="text-xl font-bold mb-4">Messages</h2>
         <% if @user.friends.any? %>
           <% @user.friends.each do |friend| %>
-            <% unread_count = Message.where(sender: friend, recipient: @user, read: false).count %>
+            <% unread_count = (@unread_counts && @unread_counts[friend.id]) || 0 %>
       <button type="button" class="w-full mb-3 flex items-center justify-between p-2 hover:bg-gray-50 rounded-lg cursor-pointer text-left border-0 bg-transparent chat-friend-button" 
         data-user-id="<%= friend.id %>"
         data-username="<%= friend.username %>"
@@ -146,9 +146,7 @@
                 </div>
                 <div class="flex-1">
                   <p class="font-semibold text-gray-900"><%= friend.username %></p>
-                  <% last_message = Message.where("(sender_id = ? AND recipient_id = ?) OR (sender_id = ? AND recipient_id = ?)", 
-                                                   current_user.id, friend.id, friend.id, current_user.id)
-                                          .order(created_at: :desc).first %>
+                  <% last_message = (@last_messages && @last_messages[friend.id]) %>
                   <% if last_message %>
                     <p class="text-xs text-gray-500 truncate max-w-[150px]">
                       <%= last_message.sender_id == current_user.id ? "You: " : "" %>
@@ -176,6 +174,14 @@
 <script>
   document.addEventListener('DOMContentLoaded', function() {
     console.log('Dashboard script loaded');
+
+    // Escape user-provided text to prevent XSS when inserting into the DOM
+    function escapeHtml(text) {
+      if (text === null || text === undefined) return '';
+      const div = document.createElement('div');
+      div.textContent = text;
+      return div.innerHTML;
+    }
     const buttons = document.querySelectorAll('.chat-friend-button');
     console.log('Found buttons:', buttons.length);
     
@@ -204,28 +210,59 @@
           avatarInitial.textContent = this.dataset.username.charAt(0).toUpperCase()
         }
         
-        const controller = window.chatWidgetController;
         const userId = this.dataset.userId;
-        
-        if (controller) {
-          console.log('Controller found, loading messages for user:', userId);
-          controller.currentRecipientId = userId;
-          controller.recipientIdTarget.value = userId;
-          controller.isMinimized = false;
-          document.getElementById('chat-body').style.height = 'auto';
-          
-          // Call loadMessages and log the result
-          try {
-            await controller.loadMessages(userId);
-            console.log('Messages loaded successfully');
-          } catch (error) {
-            console.error('Error loading messages:', error);
+
+        // Immediately show a loading placeholder so the previous conversation doesn't flash
+        const chatMessagesContainer = document.getElementById('chat-messages');
+        if (chatMessagesContainer) {
+          chatMessagesContainer.innerHTML = '<p class="text-center text-gray-500 text-sm">Loading messages...</p>';
+        }
+
+        // Robust controller lookup: try window reference, then Stimulus API, then poll briefly
+        const findController = () => {
+          if (window.chatWidgetController) return window.chatWidgetController;
+          const widgetEl = document.getElementById('chat-widget');
+          if (widgetEl && window.Stimulus && typeof window.Stimulus.getControllerForElementAndIdentifier === 'function') {
+            return window.Stimulus.getControllerForElementAndIdentifier(widgetEl, 'chat-widget');
           }
-          
-          if (controller.messageInputTarget) controller.messageInputTarget.focus();
+          return null;
+        };
+
+        let controller = findController();
+
+        if (!controller) {
+          // Wait up to ~500ms for Stimulus to connect (in cases of turbo/importmap timing)
+          const start = Date.now();
+          while (!controller && Date.now() - start < 500) {
+            // small sleep
+            await new Promise(r => setTimeout(r, 25));
+            controller = findController();
+          }
+        }
+
+        if (controller) {
+          console.debug('Controller found, loading messages for user:', userId);
+          try {
+            controller.currentRecipientId = userId;
+            if (controller.recipientIdTarget) controller.recipientIdTarget.value = userId;
+            controller.isMinimized = false;
+            const chatBodyEl = document.getElementById('chat-body');
+            if (chatBodyEl) chatBodyEl.style.height = 'auto';
+
+            // Call loadMessages and log the result
+            if (typeof controller.loadMessages === 'function') {
+              await controller.loadMessages(userId);
+              console.debug('Messages loaded successfully');
+            }
+
+            if (controller.messageInputTarget) controller.messageInputTarget.focus();
+          } catch (error) {
+            console.error('Error loading messages from controller:', error);
+          }
         } else {
-          console.error('Controller not found, trying manual fetch');
-          
+          // Controller still not available — fall back to manual fetch, but avoid noisy console.error
+          console.debug('Controller not available after wait; falling back to manual fetch for user:', userId);
+
           // Manual fallback
           try {
             const response = await fetch(`/messages/${userId}`, {
@@ -234,38 +271,38 @@
                 'X-Requested-With': 'XMLHttpRequest'
               }
             });
-            
-            console.log('Response status:', response.status);
-            
+
             if (response.ok) {
               const data = await response.json();
-              console.log('Messages data:', data);
-              
+
               const container = document.getElementById('chat-messages');
-              if (data.messages && data.messages.length > 0) {
-                container.innerHTML = data.messages.map(msg => {
-                  const isCurrentUser = msg.sender_id === <%= current_user.id %>;
-                  const alignment = isCurrentUser ? 'justify-end' : 'justify-start';
-                  const bgColor = isCurrentUser ? 'bg-indigo-600 text-white' : 'bg-gray-200 text-gray-900';
-                  const timeColor = isCurrentUser ? 'text-indigo-100' : 'text-gray-500';
-                  
-                  return `
+              if (container) {
+                if (data.messages && data.messages.length > 0) {
+                  container.innerHTML = data.messages.map(msg => {
+                    const isCurrentUser = msg.sender_id === <%= current_user.id.to_json %>;
+                    const alignment = isCurrentUser ? 'justify-end' : 'justify-start';
+                    const bgColor = isCurrentUser ? 'bg-indigo-600 text-white' : 'bg-gray-200 text-gray-900';
+                    const timeColor = isCurrentUser ? 'text-indigo-100' : 'text-gray-500';
+
+                    return `
                       <div class="flex ${alignment}">
                         <div class="${bgColor} rounded-lg px-4 py-2 max-w-xs break-words shadow">
-                          <p class="text-sm">${msg.body}</p>
+                <p class="text-sm">${escapeHtml(msg.body)}</p>
                           <p class="text-xs ${timeColor} mt-1">${new Date(msg.created_at).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true })}</p>
                         </div>
                       </div>
                     `;
-                }).join('');
-                
-                container.scrollTop = container.scrollHeight;
-              } else {
-                container.innerHTML = '<p class="text-center text-gray-500 text-sm">No messages yet. Start the conversation!</p>';
+                  }).join('');
+
+                  container.scrollTop = container.scrollHeight;
+                } else {
+                  container.innerHTML = '<p class="text-center text-gray-500 text-sm">No messages yet. Start the conversation!</p>';
+                }
               }
-              
-              // Set up form
-              document.getElementById('chat-recipient-id').value = userId;
+
+              // Set up form recipient id
+              const recipientInput = document.getElementById('chat-recipient-id');
+              if (recipientInput) recipientInput.value = userId;
             } else {
               console.error('Failed to load messages:', response.statusText);
             }
@@ -328,7 +365,7 @@
             const messageHTML = `
               <div class="flex ${alignment}">
                 <div class="${bgColor} rounded-lg px-4 py-2 max-w-xs break-words shadow">
-                  <p class="text-sm">${data.message.body}</p>
+                  <p class="text-sm">${escapeHtml(data.message.body)}</p>
                   <p class="text-xs ${timeColor} mt-1">${new Date(data.message.created_at).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true })}</p>
                 </div>
               </div>

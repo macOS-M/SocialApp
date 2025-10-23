@@ -3,7 +3,7 @@ class ApplicationController < ActionController::Base
   before_action :set_action_cable_identifier
 
   allow_browser versions: :modern
-  
+
   def configure_permitted_parameters
     devise_parameter_sanitizer.permit(:sign_up, keys: [ :username, :date_of_birth ])
 
@@ -19,7 +19,7 @@ class ApplicationController < ActionController::Base
       ]
     )
   end
-  
+
   def after_sign_in_path_for(resource)
     dashboard_path
   end

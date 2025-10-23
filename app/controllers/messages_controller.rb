@@ -6,6 +6,11 @@ class MessagesController < ApplicationController
     @conversations = Message.where("sender_id = ? OR recipient_id = ?", current_user.id, current_user.id)
       .order(created_at: :desc)
 
+    other_user_ids = @conversations.map do |m|
+      m.sender_id == current_user.id ? m.recipient_id : m.sender_id
+    end.uniq
+    @conversation_users = User.where(id: other_user_ids).index_by(&:id)
+
     if params[:user_id].present?
       @user = User.find(params[:user_id])
       @messages = Message.where(
@@ -26,14 +31,14 @@ class MessagesController < ApplicationController
 
     respond_to do |format|
       format.html
-      format.json { render json: { messages: @messages.as_json(only: [:id, :sender_id, :recipient_id, :body, :created_at]) } }
+      format.json { render json: { messages: @messages.as_json(only: [ :id, :sender_id, :recipient_id, :body, :created_at ]) } }
     end
   end
 
   def create
     @message = Message.new(message_params)
     @message.sender_id = current_user.id
-    
+
     respond_to do |format|
       if @message.save
         format.html { redirect_back(fallback_location: dashboard_path, notice: "Message sent!") }

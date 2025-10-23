@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_10_22_145817) do
+ActiveRecord::Schema[8.0].define(version: 2025_10_23_120000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -54,12 +54,14 @@ ActiveRecord::Schema[8.0].define(version: 2025_10_22_145817) do
   end
 
   create_table "messages", force: :cascade do |t|
-    t.integer "sender_id"
-    t.integer "recipient_id"
+    t.integer "sender_id", null: false
+    t.integer "recipient_id", null: false
     t.text "body"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
-    t.boolean "read"
+    t.boolean "read", default: false, null: false
+    t.index ["recipient_id"], name: "index_messages_on_recipient_id"
+    t.index ["sender_id"], name: "index_messages_on_sender_id"
   end
 
   create_table "posts", force: :cascade do |t|
@@ -93,5 +95,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_10_22_145817) do
   add_foreign_key "active_storage_variant_records", "active_storage_blobs", column: "blob_id"
   add_foreign_key "friendships", "users"
   add_foreign_key "friendships", "users", column: "friend_id"
+  add_foreign_key "messages", "users", column: "recipient_id", on_delete: :cascade
+  add_foreign_key "messages", "users", column: "sender_id", on_delete: :cascade
   add_foreign_key "posts", "users"
 end

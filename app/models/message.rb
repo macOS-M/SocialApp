@@ -12,7 +12,7 @@ class Message < ApplicationRecord
 
   def broadcast_message
     html = ApplicationController.render(
-      partial: 'messages/message',
+      partial: "messages/message",
       locals: { message: self, current_user: self.sender }
     )
 

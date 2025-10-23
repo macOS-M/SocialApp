@@ -22,7 +22,7 @@
           <% if sorted.any? %>
             <% sorted.each do |message| %>
               <% other_user_id = message.sender_id == current_user.id ? message.recipient_id : message.sender_id %>
-              <% other_user = User.find(other_user_id) %>
+              <% other_user = @conversation_users[other_user_id] || User.find(other_user_id) %>
               <%= link_to messages_path(user_id: other_user.id), class: "block p-4 hover:bg-gray-50 transition flex items-center" do %>
                 <div class="flex-shrink-0">
                   <% if other_user.profile_image.attached? %>

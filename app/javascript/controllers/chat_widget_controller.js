@@ -23,7 +23,7 @@ export default class extends Controller {
     }
   }
 
-  openChat(event) {
+  async openChat(event) {
     event.preventDefault()
     event.stopPropagation()
     
@@ -54,10 +54,16 @@ export default class extends Controller {
     widget.classList.remove('hidden')
     this.isMinimized = false
     document.getElementById('chat-body').style.height = 'auto'
-    
-    this.loadMessages(userId)
-    
-    this.messageInputTarget.focus()
+    if (this.hasMessagesContainerTarget) {
+      this.messagesContainerTarget.innerHTML = '<p class="text-center text-gray-500 text-sm">Loading messages...</p>'
+    } else {
+      const container = document.getElementById('chat-messages')
+      if (container) container.innerHTML = '<p class="text-center text-gray-500 text-sm">Loading messages...</p>'
+    }
+
+    await this.loadMessages(userId)
+
+    if (this.messageInputTarget) this.messageInputTarget.focus()
   }
 
   toggleMinimize(event) {

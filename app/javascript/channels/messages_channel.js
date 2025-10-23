@@ -5,8 +5,12 @@ const messagesChannel = consumer.subscriptions.create("MessagesChannel", {
   received(data) {
     const chatWidget = document.querySelector('[data-controller~="chat-widget"]')
     if (chatWidget) {
-      const controller = this.application.getControllerForElementAndIdentifier(chatWidget, 'chat-widget')
-      if (controller) {
+      let controller = window.chatWidgetController;
+      if (!controller && window.Stimulus && typeof window.Stimulus.getControllerForElementAndIdentifier === 'function') {
+        controller = window.Stimulus.getControllerForElementAndIdentifier(chatWidget, 'chat-widget');
+      }
+
+      if (controller && typeof controller.receiveMessage === 'function') {
         controller.receiveMessage(data)
       }
     }

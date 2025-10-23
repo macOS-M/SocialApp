@@ -2,6 +2,9 @@ Rails.application.routes.draw do
   devise_for :users, controllers: { registrations: "users/registrations" }
   # Define your application routes per the DSL in https://guides.rubyonrails.org/routing.html
 
+  # Mount Action Cable for WebSocket connections
+  mount ActionCable.server => "/cable"
+
   # Reveal health status on /up that returns 200 if the app boots with no exceptions, otherwise 500.
   # Can be used by load balancers and uptime monitors to verify that the app is live.
   get "up" => "rails/health#show", as: :rails_health_check
@@ -10,6 +13,7 @@ Rails.application.routes.draw do
   get "/profile/:username", to: "profiles#show", as: :profile
   get "/search", to: "search#index", as: :search
 
+
   resources :posts, only: [ :new, :create, :edit, :update, :destroy ]
   resources :friendships, only: [ :create, :destroy ] do
     member do
@@ -17,6 +21,8 @@ Rails.application.routes.draw do
       patch :reject
     end
   end
+
+  resources :messages, only: [ :index, :show, :create ]
 
 
 

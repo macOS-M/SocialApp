@@ -1,0 +1,94 @@
+<div class="max-w-7xl mx-auto p-6">
+  <h1 class="text-3xl font-bold mb-6">Messages</h1>
+
+  <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+    <!-- Left column -->
+    <div class="md:col-span-1">
+      <div class="bg-white rounded-lg shadow-md">
+        <div class="p-4 border-b">
+          <h2 class="text-lg font-semibold">Conversations</h2>
+        </div>
+        <div class="divide-y">
+          <% 
+            conversations = {}
+            @conversations.each do |message|
+              other_user_id = message.sender_id == current_user.id ? message.recipient_id : message.sender_id
+              conversations[other_user_id] = message if conversations[other_user_id].nil? || message.created_at > conversations[other_user_id].created_at
+            end
+
+            sorted = conversations.values.sort_by(&:created_at).reverse
+          %>
+
+          <% if sorted.any? %>
+            <% sorted.each do |message| %>
+              <% other_user_id = message.sender_id == current_user.id ? message.recipient_id : message.sender_id %>
+              <% other_user = @conversation_users[other_user_id] || User.find(other_user_id) %>
+              <%= link_to messages_path(user_id: other_user.id), class: "block p-4 hover:bg-gray-50 transition flex items-center" do %>
+                <div class="flex-shrink-0">
+                  <% if other_user.profile_image.attached? %>
+                    <%= image_tag other_user.profile_image, class: "w-10 h-10 rounded-full object-cover" %>
+                  <% else %>
+                    <div class="w-10 h-10 rounded-full bg-gray-300 flex items-center justify-center">
+                      <span class="text-gray-600 text-lg font-semibold"><%= other_user.username.first.upcase %></span>
+                    </div>
+                  <% end %>
+                </div>
+                <div class="flex-1 min-w-0 ml-3">
+                  <p class="text-sm font-semibold text-gray-900 truncate"><%= other_user.username %></p>
+                  <p class="text-sm text-gray-500 truncate"><%= truncate(message.body, length: 50) %></p>
+                </div>
+                <div class="flex-shrink-0 text-xs text-gray-400 ml-3">
+                  <%= time_ago_in_words(message.created_at) %> ago
+                </div>
+              <% end %>
+            <% end %>
+          <% else %>
+            <div class="p-4 text-center text-gray-500">No conversations yet.</div>
+          <% end %>
+        </div>
+      </div>
+    </div>
+
+    <!-- Right column -->
+    <div class="md:col-span-2">
+      <div class="bg-white rounded-lg shadow-md h-full flex flex-col">
+        <% if @user.present? %>
+          <div class="p-4 border-b flex items-center space-x-3">
+            <% if @user.profile_image.attached? %>
+              <%= image_tag @user.profile_image, class: "w-10 h-10 rounded-full object-cover" %>
+            <% else %>
+              <div class="w-10 h-10 rounded-full bg-gray-300 flex items-center justify-center">
+                <span class="text-gray-600 text-lg font-semibold"><%= @user.username.first.upcase %></span>
+              </div>
+            <% end %>
+            <div>
+              <h2 class="text-lg font-semibold"><%= @user.username %></h2>
+            </div>
+          </div>
+
+          <div class="p-4 space-y-4 max-h-[32rem] overflow-y-auto messages-container flex-1">
+            <% if @messages.present? && @messages.any? %>
+              <%= render @messages %>
+            <% else %>
+              <p class="text-center text-gray-500">No messages yet. Start the conversation!</p>
+            <% end %>
+          </div>
+
+          <div class="p-4 border-t">
+            <%= form_with model: @message, url: messages_path, local: true, class: "flex space-x-2" do |f| %>
+              <%= f.hidden_field :recipient_id, value: @user.id %>
+              <div class="flex-1">
+                <%= f.text_area :body, rows: 1, placeholder: "Type a message...", class: "w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none" %>
+              </div>
+              <%= f.submit "Send", class: "px-6 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 cursor-pointer" %>
+            <% end %>
+          </div>
+        <% else %>
+          <div class="p-8 text-center text-gray-500">
+            <p>Select a conversation on the left to view messages.</p>
+          </div>
+        <% end %>
+      </div>
+    </div>
+  </div>
+</div>

@@ -20,6 +20,10 @@ class User < ApplicationRecord
   has_many :inverse_accepted_friendships, -> { where(status: "accepted") }, class_name: "Friendship", foreign_key: "friend_id"
   has_many :inverse_friends, through: :inverse_accepted_friendships, source: :user
 
+  # Messages
+  has_many :sent_messages, class_name: "Message", foreign_key: "sender_id", dependent: :destroy
+  has_many :received_messages, class_name: "Message", foreign_key: "recipient_id", dependent: :destroy
+
   # Helpers for pending state
   has_many :pending_friendships, -> { where(status: "pending") }, class_name: "Friendship"
   has_many :pending_friends, through: :pending_friendships, source: :friend

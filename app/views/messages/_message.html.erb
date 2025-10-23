@@ -1,0 +1,13 @@
+<div class="<%= message.sender_id == current_user.id ? 'flex justify-end w-full' : 'flex justify-start w-full' %>">
+  <% if message.sender_id == current_user.id %>
+    <div class="bg-indigo-600 text-white rounded-lg px-4 py-2 max-w-xs break-words shadow-sm w-auto">
+      <p class="whitespace-pre-wrap"><%= message.body %></p>
+      <p class="text-xs text-indigo-100 mt-1"><%= message.created_at.strftime("%l:%M %p") %></p>
+    </div>
+  <% else %>
+    <div class="bg-gray-100 text-gray-900 rounded-lg px-4 py-2 max-w-xs break-words border border-gray-200 shadow-sm w-auto">
+      <p class="whitespace-pre-wrap"><%= message.body %></p>
+      <p class="text-xs text-gray-500 mt-1"><%= message.created_at.strftime("%l:%M %p") %></p>
+    </div>
+  <% end %>
+</div>

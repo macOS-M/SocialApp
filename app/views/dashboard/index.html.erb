@@ -79,7 +79,6 @@
 
       <div class="bg-white rounded-2xl p-4 shadow-lg">
         <h2 class="text-xl font-bold mb-4">Friend Requests</h2>
-
         <% if @user.inverse_friendships.pending.any? %>
           <ul>
             <% @user.inverse_friendships.pending.each do |request| %>
@@ -99,7 +98,6 @@
 
       <div class="bg-white rounded-2xl p-4 shadow-lg">
         <h2 class="text-xl font-bold mb-4">Friends</h2>
-
         <% if @user.friends.any? %>
           <ul>
             <% @user.friends.each do |friend| %>
@@ -128,7 +126,266 @@
         <% end %>
       </div>
 
+      <!-- Messaging Section -->
+      <div class="bg-white rounded-2xl p-4 shadow-lg">
+        <h2 class="text-xl font-bold mb-4">Messages</h2>
+        <% if @user.friends.any? %>
+          <% @user.friends.each do |friend| %>
+            <% unread_count = Message.where(sender: friend, recipient: @user, read: false).count %>
+      <button type="button" class="w-full mb-3 flex items-center justify-between p-2 hover:bg-gray-50 rounded-lg cursor-pointer text-left border-0 bg-transparent chat-friend-button" 
+        data-user-id="<%= friend.id %>"
+        data-username="<%= friend.username %>"
+        data-avatar="<%= friend.profile_image.attached? ? url_for(friend.profile_image) : '' %>">
+              <div class="flex items-center space-x-3">
+                <div class="w-10 h-10 rounded-full bg-gradient-to-br from-indigo-400 to-purple-500 flex items-center justify-center overflow-hidden flex-shrink-0">
+                  <% if friend.profile_image.attached? %>
+                    <%= image_tag url_for(friend.profile_image), class: "w-full h-full object-cover" %>
+                  <% else %>
+                    <span class="text-white font-bold"><%= friend.username[0].upcase %></span>
+                  <% end %>
+                </div>
+                <div class="flex-1">
+                  <p class="font-semibold text-gray-900"><%= friend.username %></p>
+                  <% last_message = Message.where("(sender_id = ? AND recipient_id = ?) OR (sender_id = ? AND recipient_id = ?)", 
+                                                   current_user.id, friend.id, friend.id, current_user.id)
+                                          .order(created_at: :desc).first %>
+                  <% if last_message %>
+                    <p class="text-xs text-gray-500 truncate max-w-[150px]">
+                      <%= last_message.sender_id == current_user.id ? "You: " : "" %>
+                      <%= truncate(last_message.body, length: 30) %>
+                    </p>
+                  <% end %>
+                </div>
+              </div>
+              <% if unread_count > 0 %>
+                <span class="inline-block bg-red-500 text-white text-xs rounded-full px-2 py-1 font-semibold">
+                  <%= unread_count %>
+                </span>
+              <% end %>
+            </button>
+          <% end %>
+        <% else %>
+          <p class="text-gray-500">No friends to message yet.</p>
+        <% end %>
+      </div>
+
     </div>
 
   </div>
 </div>
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    console.log('Dashboard script loaded');
+    const buttons = document.querySelectorAll('.chat-friend-button');
+    console.log('Found buttons:', buttons.length);
+    
+    buttons.forEach(function(button) {
+      button.addEventListener('click', async function(e) {
+        console.log('Button clicked!', this.dataset.userId, this.dataset.username);
+        
+        const widget = document.getElementById('chat-widget');
+        if (!widget) {
+          console.error('Widget not found');
+          return;
+        }
+        
+        widget.classList.remove('hidden');
+        document.getElementById('chat-recipient-name').textContent = this.dataset.username;
+        const avatarImg = document.getElementById('chat-recipient-avatar-img')
+        const avatarInitial = document.getElementById('chat-recipient-avatar')
+        if (this.dataset.avatar && this.dataset.avatar.length > 0) {
+          avatarImg.src = this.dataset.avatar
+          avatarImg.classList.remove('hidden')
+          avatarInitial.classList.add('hidden')
+        } else {
+          avatarImg.src = ''
+          avatarImg.classList.add('hidden')
+          avatarInitial.classList.remove('hidden')
+          avatarInitial.textContent = this.dataset.username.charAt(0).toUpperCase()
+        }
+        
+        const controller = window.chatWidgetController;
+        const userId = this.dataset.userId;
+        
+        if (controller) {
+          console.log('Controller found, loading messages for user:', userId);
+          controller.currentRecipientId = userId;
+          controller.recipientIdTarget.value = userId;
+          controller.isMinimized = false;
+          document.getElementById('chat-body').style.height = 'auto';
+          
+          // Call loadMessages and log the result
+          try {
+            await controller.loadMessages(userId);
+            console.log('Messages loaded successfully');
+          } catch (error) {
+            console.error('Error loading messages:', error);
+          }
+          
+          if (controller.messageInputTarget) controller.messageInputTarget.focus();
+        } else {
+          console.error('Controller not found, trying manual fetch');
+          
+          // Manual fallback
+          try {
+            const response = await fetch(`/messages/${userId}`, {
+              headers: {
+                'Accept': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest'
+              }
+            });
+            
+            console.log('Response status:', response.status);
+            
+            if (response.ok) {
+              const data = await response.json();
+              console.log('Messages data:', data);
+              
+              const container = document.getElementById('chat-messages');
+              if (data.messages && data.messages.length > 0) {
+                container.innerHTML = data.messages.map(msg => {
+                  const isCurrentUser = msg.sender_id === <%= current_user.id %>;
+                  const alignment = isCurrentUser ? 'justify-end' : 'justify-start';
+                  const bgColor = isCurrentUser ? 'bg-indigo-600 text-white' : 'bg-gray-200 text-gray-900';
+                  const timeColor = isCurrentUser ? 'text-indigo-100' : 'text-gray-500';
+                  
+                  return `
+                      <div class="flex ${alignment}">
+                        <div class="${bgColor} rounded-lg px-4 py-2 max-w-xs break-words shadow">
+                          <p class="text-sm">${msg.body}</p>
+                          <p class="text-xs ${timeColor} mt-1">${new Date(msg.created_at).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true })}</p>
+                        </div>
+                      </div>
+                    `;
+                }).join('');
+                
+                container.scrollTop = container.scrollHeight;
+              } else {
+                container.innerHTML = '<p class="text-center text-gray-500 text-sm">No messages yet. Start the conversation!</p>';
+              }
+              
+              // Set up form
+              document.getElementById('chat-recipient-id').value = userId;
+            } else {
+              console.error('Failed to load messages:', response.statusText);
+            }
+          } catch (error) {
+            console.error('Fetch error:', error);
+          }
+        }
+      });
+    });
+    
+    // Handle form submission to prevent page reload
+    document.addEventListener('submit', function(e) {
+      if (e.target.id === 'chat-message-form') {
+        e.preventDefault();
+        console.log('Form submit intercepted');
+        
+        const form = e.target;
+        const recipientId = document.getElementById('chat-recipient-id').value;
+        const body = document.getElementById('chat-message-input').value.trim();
+        
+        if (!body) {
+          console.log('Empty message, ignoring');
+          return;
+        }
+        
+        console.log('Sending message:', { recipientId, body });
+        
+        // Disable button
+        const sendButton = form.querySelector('button[type="submit"]');
+        if (sendButton) sendButton.disabled = true;
+        
+        // Send via fetch
+        const formData = new FormData();
+        formData.append('message[recipient_id]', recipientId);
+        formData.append('message[body]', body);
+        
+        fetch('/messages', {
+          method: 'POST',
+          headers: {
+            'X-CSRF-Token': document.querySelector('[name="csrf-token"]').content,
+            'Accept': 'application/json'
+          },
+          body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+          console.log('Message sent:', data);
+          
+          // Clear input
+          document.getElementById('chat-message-input').value = '';
+          
+          // Add message to UI
+          if (data.message) {
+            const container = document.getElementById('chat-messages');
+            const isCurrentUser = data.message.sender_id === <%= current_user.id %>;
+            const alignment = isCurrentUser ? 'justify-end' : 'justify-start';
+            const bgColor = isCurrentUser ? 'bg-indigo-600 text-white' : 'bg-gray-200 text-gray-900';
+            const timeColor = isCurrentUser ? 'text-indigo-100' : 'text-gray-500';
+            
+            const messageHTML = `
+              <div class="flex ${alignment}">
+                <div class="${bgColor} rounded-lg px-4 py-2 max-w-xs break-words shadow">
+                  <p class="text-sm">${data.message.body}</p>
+                  <p class="text-xs ${timeColor} mt-1">${new Date(data.message.created_at).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true })}</p>
+                </div>
+              </div>
+            `;
+            
+            container.insertAdjacentHTML('beforeend', messageHTML);
+            container.scrollTop = container.scrollHeight;
+          }
+          
+          // Re-enable button
+          if (sendButton) sendButton.disabled = false;
+          document.getElementById('chat-message-input').focus();
+        })
+        .catch(error => {
+          console.error('Error sending message:', error);
+          alert('Failed to send message');
+          if (sendButton) sendButton.disabled = false;
+        });
+      }
+    });
+    
+    // Handle minimize/close buttons
+    let isMinimized = false;
+    
+    document.addEventListener('click', function(e) {
+      const widget = document.getElementById('chat-widget');
+      const chatBody = document.getElementById('chat-body');
+      const minimizeIcon = document.getElementById('minimize-icon');
+      
+      if (e.target.closest('button[data-action*="closeChat"]')) {
+        e.stopPropagation();
+        console.log('Close button clicked');
+        widget.classList.add('hidden');
+        isMinimized = false;
+        chatBody.style.height = 'auto';
+        return;
+      }
+      
+      if (e.target.closest('button[data-action*="toggleMinimize"]')) {
+        e.stopPropagation();
+        console.log('Minimize button clicked');
+        
+        if (isMinimized) {
+          chatBody.style.height = 'auto';
+          isMinimized = false;
+          if (minimizeIcon) {
+            minimizeIcon.innerHTML = '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>';
+          }
+        } else {
+          chatBody.style.height = '0';
+          isMinimized = true;
+          if (minimizeIcon) {
+            minimizeIcon.innerHTML = '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7"></path>';
+          }
+        }
+        return;
+      }
+    });
+  });
+</script>

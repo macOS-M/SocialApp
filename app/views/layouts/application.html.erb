@@ -47,5 +47,10 @@
     <%= yield %>
   </main>
 
+  <!-- Chat Widget Container -->
+  <% if user_signed_in? %>
+    <%= render 'shared/chat_widget' %>
+  <% end %>
+
 </body>
 </html>

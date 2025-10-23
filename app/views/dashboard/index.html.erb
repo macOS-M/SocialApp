@@ -232,12 +232,23 @@
 
         if (!controller) {
           // Wait up to ~500ms for Stimulus to connect (in cases of turbo/importmap timing)
-          const start = Date.now();
-          while (!controller && Date.now() - start < 500) {
-            // small sleep
-            await new Promise(r => setTimeout(r, 25));
-            controller = findController();
+          async function pollForController(timeoutMs = 500, intervalMs = 25) {
+            const start = Date.now();
+            return new Promise(resolve => {
+              function tryFind() {
+                const ctrl = findController();
+                if (ctrl) {
+                  resolve(ctrl);
+                } else if (Date.now() - start < timeoutMs) {
+                  setTimeout(tryFind, intervalMs);
+                } else {
+                  resolve(null);
+                }
+              }
+              tryFind();
+            });
           }
+          controller = await pollForController();
         }
 
         if (controller) {
@@ -279,7 +290,7 @@
               if (container) {
                 if (data.messages && data.messages.length > 0) {
                   container.innerHTML = data.messages.map(msg => {
-                    const isCurrentUser = msg.sender_id === <%= current_user.id.to_json %>;
+                    const isCurrentUser = msg.sender_id === <%= current_user.id %>;
                     const alignment = isCurrentUser ? 'justify-end' : 'justify-start';
                     const bgColor = isCurrentUser ? 'bg-indigo-600 text-white' : 'bg-gray-200 text-gray-900';
                     const timeColor = isCurrentUser ? 'text-indigo-100' : 'text-gray-500';
